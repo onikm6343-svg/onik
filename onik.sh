@@ -8,7 +8,6 @@ W='\033[1;37m'
 P='\033[1;35m'
 N='\033[0m'
 
-# Smart OTG ADB/Fastboot Executor
 run_otg() {
     local CMD="$*"
     if su -c "id" >/dev/null 2>&1; then
@@ -17,17 +16,15 @@ run_otg() {
         USB_DEV=$(termux-usb -l 2>/dev/null | grep -o '/dev/bus/usb/[0-9]*/[0-9]*' | head -n 1)
         if [ -n "$USB_DEV" ]; then
             echo -e "${C}[*] OTG Device Found: $USB_DEV${N}"
-            echo -e "${Y}[!] Tap 'OK' on the USB Permission popup if asked...${N}"
+            echo -e "${Y}[!] Tap 'OK' on USB Permission popup if asked...${N}"
             termux-usb -r "$USB_DEV" >/dev/null 2>&1
             termux-usb -e "$CMD" "$USB_DEV"
         else
-            echo -e "${Y}[*] No OTG USB detected via termux-usb. Trying standard mode...${N}"
             $CMD
         fi
     fi
 }
 
-# Main Banner
 banner() {
     clear
     if su -c "id" >/dev/null 2>&1; then
@@ -39,7 +36,7 @@ banner() {
     [ -z "$IP" ] && IP="${R}Offline${N}" || IP="${G}$IP${N}"
 
     echo -e "${C}+--------------------------------------+${N}"
-    echo -e "${C}|${W}        ONIK PRO MASTER SUITE         ${C}|${N}"
+    echo -e "${C}|${W}      ONIK PRO MASTER SUITE v3.0      ${C}|${N}"
     echo -e "${C}|${P}         Developer : MD Onik          ${C}|${N}"
     echo -e "${C}+--------------------------------------+${N}"
     echo -e "${C}|${N} Mode: $R_STAT | IP: $IP"
@@ -47,7 +44,6 @@ banner() {
     echo ""
 }
 
-# 1. Master Setup 1 (Root Methods)
 root_setup_menu() {
     while true; do
         clear
@@ -67,20 +63,17 @@ root_setup_menu() {
                 echo -e "\n${Y}[*] Granting Storage & Root Permissions...${N}"
                 termux-setup-storage
                 sleep 2
-                echo -e "${Y}[*] Updating Termux & Installing Root + OTG Packages...${N}"
+                echo -e "${Y}[*] Installing Root, OTG & Flashing Packages...${N}"
                 pkg update -y && pkg upgrade -y
                 pkg install -y root-repo tsu python nodejs git wget curl termux-api libusb nmap net-tools iproute2 dnsutils android-tools
                 pip install --upgrade pip >/dev/null 2>&1
                 pip install speedtest-cli >/dev/null 2>&1
                 
                 if [ "$r_ch" == "1" ]; then
-                    echo -e "${C}[*] Configuring Magisk Environment...${N}"
                     su -c "magisk -v" 2>/dev/null || echo -e "${Y}[!] Tap Grant on Magisk Popup!${N}"
                 elif [ "$r_ch" == "2" ]; then
-                    echo -e "${C}[*] Configuring KernelSU Environment...${N}"
                     su -c "ksud -V" 2>/dev/null || echo -e "${Y}[!] Allow Termux in KernelSU App!${N}"
                 elif [ "$r_ch" == "3" ]; then
-                    echo -e "${C}[*] Configuring APatch Environment...${N}"
                     su -c "apd -V" 2>/dev/null || echo -e "${Y}[!] Allow Termux in APatch App!${N}"
                 fi
                 echo -e "\n${G}[OK] Root Master Setup Completed!${N}"
@@ -92,7 +85,6 @@ root_setup_menu() {
     done
 }
 
-# 2. Master Setup 2 (Non-Root & OTG Setup)
 nonroot_setup() {
     clear
     echo -e "${Y}[*] Starting Master Setup 2 (Non-Root & OTG ADB)...${N}"
@@ -107,7 +99,6 @@ nonroot_setup() {
     read -p "Press Enter..."
 }
 
-# 3. WiFi Tools Sub-menu
 wifi_tools_menu() {
     while true; do
         clear
@@ -179,99 +170,137 @@ except Exception:
     done
 }
 
-# 4. ADB & Fastboot OTG Root Manager
 adb_fastboot_menu() {
     while true; do
         clear
         echo -e "${C}+--------------------------------------+${N}"
-        echo -e "${C}|${W}   ADB & FASTBOOT OTG ROOT MANAGER    ${C}|${N}"
+        echo -e "${C}|${W}   UNIVERSAL ADB & FASTBOOT FLASHER   ${C}|${N}"
         echo -e "${C}+--------------------------------------+${N}"
-        echo -e "  ${G}1)${N} Check OTG USB & ADB Devices"
+        echo -e "${Y} [CONNECTION & INFO]${N}"
+        echo -e "  ${G}1)${N} Check ADB Devices"
         echo -e "  ${G}2)${N} Check Fastboot Devices"
-        echo -e "  ${G}3)${N} Reboot to Fastboot / Bootloader"
-        echo -e "  ${G}4)${N} Reboot to Recovery"
-        echo -e "  ${G}5)${N} Boot Temporary Image (fastboot boot)"
-        echo -e "  ${G}6)${N} Flash Boot Image (Rooting)"
-        echo -e "  ${G}7)${N} Flash Init_Boot Image (Android 13+)"
-        echo -e "  ${G}8)${N} Check Bootloader Unlock Status"
-        echo -e "  ${G}9)${N} Reboot System (Normal)"
+        echo -e "  ${G}3)${N} Check Bootloader & Active Slot (A/B)"
+        echo -e "${Y} [REBOOT CONTROLS]${N}"
+        echo -e "  ${G}4)${N} Normal Reboot (System)"
+        echo -e "  ${G}5)${N} Reboot to Bootloader / Fastboot"
+        echo -e "  ${G}6)${N} Reboot to FastbootD (Dynamic)"
+        echo -e "  ${G}7)${N} Reboot to Recovery Mode"
+        echo -e "  ${G}8)${N} Reboot to EDL Mode (Qualcomm)"
+        echo -e "${Y} [UNIVERSAL ROOT & FLASHING]${N}"
+        echo -e "  ${G}9)${N} Temporary Boot (fastboot boot)"
+        echo -e " ${G}10)${N} Flash Boot Image (All Android)"
+        echo -e " ${G}11)${N} Flash Init_Boot Image (Newer OS)"
+        echo -e " ${G}12)${N} Flash Vendor_Boot Image"
+        echo -e " ${G}13)${N} Flash Vbmeta (Disable Verity)"
+        echo -e " ${G}14)${N} Flash Custom Recovery (TWRP/OFOX)"
+        echo -e " ${G}15)${N} Sideload Zip via ADB (Magisk/ROM)"
         echo -e "  ${R}0)${N} Back to Main Menu"
         echo ""
-        read -p "Select ADB/Fastboot Option [0-9]: " a_ch
+        read -p "Select Option [0-15]: " a_ch
+
 
         case $a_ch in
             1)
-                echo -e "\n${Y}[*] Checking Connected OTG / ADB Devices:${N}"
+                echo -e "\n${Y}[*] Connected ADB Devices:${N}"
                 termux-usb -l 2>/dev/null
                 run_otg adb devices
                 read -p "Press Enter..." ;;
             2)
-                echo -e "\n${Y}[*] Checking Connected Fastboot Devices:${N}"
+                echo -e "\n${Y}[*] Connected Fastboot Devices:${N}"
                 run_otg fastboot devices
                 read -p "Press Enter..." ;;
             3)
-                echo -e "\n${Y}[*] Rebooting target to Bootloader/Fastboot...${N}"
-                run_otg adb reboot bootloader
+                echo -e "\n${Y}[*] Device Slot & Bootloader Info:${N}"
+                run_otg fastboot getvar current-slot
+                run_otg fastboot getvar unlocked
+                run_otg fastboot oem device-info
                 read -p "Press Enter..." ;;
             4)
-                echo -e "\n${Y}[*] Rebooting target to Recovery...${N}"
-                run_otg adb reboot recovery
+                echo -e "\n${Y}[*] Rebooting to Normal System...${N}"
+                run_otg fastboot reboot 2>/dev/null || run_otg adb reboot
                 read -p "Press Enter..." ;;
             5)
-                echo -e "\n${C}Example path: /sdcard/Download/boot.img${N}"
-                read -p "Enter boot.img path: " IMG_PATH
-                [ -f "$IMG_PATH" ] && run_otg fastboot boot "$IMG_PATH" || echo -e "${R}[!] File not found!${N}"
+                echo -e "\n${Y}[*] Rebooting to Bootloader / Fastboot...${N}"
+                run_otg adb reboot bootloader
                 read -p "Press Enter..." ;;
             6)
-                echo -e "\n${C}Example path: /sdcard/Download/magisk_patched.img${N}"
-                read -p "Enter Patched boot.img path: " B_PATH
-                if [ -f "$B_PATH" ]; then
-                    run_otg fastboot flash boot "$B_PATH"
+                echo -e "\n${Y}[*] Rebooting to FastbootD...${N}"
+                run_otg adb reboot fastboot 2>/dev/null || run_otg fastboot reboot fastboot
+                read -p "Press Enter..." ;;
+            7)
+                echo -e "\n${Y}[*] Rebooting to Recovery Mode...${N}"
+                run_otg adb reboot recovery
+                read -p "Press Enter..." ;;
+            8)
+                echo -e "\n${Y}[*] Rebooting to EDL Mode...${N}"
+                run_otg adb reboot edl 2>/dev/null || run_otg fastboot oem edl
+                read -p "Press Enter..." ;;
+            9)
+                echo -e "\n${C}Example: /sdcard/Download/boot.img${N}"
+                read -p "Enter Image Path: " IMG
+                [ -f "$IMG" ] && run_otg fastboot boot "$IMG" || echo -e "${R}[!] File not found!${N}"
+                read -p "Press Enter..." ;;
+            10)
+                echo -e "\n${C}Example: /sdcard/Download/magisk_boot.img${N}"
+                read -p "Enter boot.img Path: " B_IMG
+                [ -f "$B_IMG" ] && run_otg fastboot flash boot "$B_IMG" || echo -e "${R}[!] File not found!${N}"
+                read -p "Press Enter..." ;;
+            11)
+                echo -e "\n${C}Example: /sdcard/Download/init_boot.img${N}"
+                read -p "Enter init_boot.img Path: " IB_IMG
+                [ -f "$IB_IMG" ] && run_otg fastboot flash init_boot "$IB_IMG" || echo -e "${R}[!] File not found!${N}"
+                read -p "Press Enter..." ;;
+            12)
+                echo -e "\n${C}Example: /sdcard/Download/vendor_boot.img${N}"
+                read -p "Enter vendor_boot.img Path: " VB_IMG
+                [ -f "$VB_IMG" ] && run_otg fastboot flash vendor_boot "$VB_IMG" || echo -e "${R}[!] File not found!${N}"
+                read -p "Press Enter..." ;;
+            13)
+                echo -e "\n${C}Example: /sdcard/Download/vbmeta.img${N}"
+                read -p "Enter vbmeta.img Path: " VBM
+                if [ -f "$VBM" ]; then
+                    run_otg fastboot --disable-verity --disable-verification flash vbmeta "$VBM"
                 else
                     echo -e "${R}[!] File not found!${N}"
                 fi
-read -p "Press Enter..." ;;
-7)
-echo -e "\n${C}Example path: /sdcard/Download/init_boot.img${N}"
-read -p "Enter Patched init_boot.img path: " IB_PATH
-if [ -f "$IB_PATH" ]; then
-run_otg fastboot flash init_boot "$IB_PATH"
-else
-echo -e "${R}[!] File not found!${N}"
-fi
-read -p "Press Enter..." ;;
-8)
-echo -e "\n${Y}[] Checking Bootloader Status:${N}"
-run_otg fastboot getvar unlocked
-run_otg fastboot oem device-info
-read -p "Press Enter..." ;;
-9)
-echo -e "\n${Y}[] Rebooting device to System...${N}"
-run_otg fastboot reboot
-read -p "Press Enter..." ;;
-0) break ;;
-*) echo -e "${R}[!] Invalid option!${N}"; sleep 1 ;;
-esac
-done
+                read -p "Press Enter..." ;;
+            14)
+                echo -e "\n${C}Example: /sdcard/Download/recovery.img${N}"
+                read -p "Enter recovery.img Path: " REC
+                [ -f "$REC" ] && run_otg fastboot flash recovery "$REC" || echo -e "${R}[!] File not found!${N}"
+                read -p "Press Enter..." ;;
+            15)
+                echo -e "\n${C}Example: /sdcard/Download/Magisk.zip${N}"
+                read -p "Enter Zip File Path: " ZIPF
+                [ -f "$ZIPF" ] && run_otg adb sideload "$ZIPF" || echo -e "${R}[!] File not found!${N}"
+                read -p "Press Enter..." ;;
+            0) break ;;
+            *) echo -e "${R}[!] Invalid option!${N}"; sleep 1 ;;
+        esac
+    done
 }
 
-Main Menu Loop
-
 while true; do
-banner
-echo -e "  ${G}1)${N} Master Setup 1 (Root: Magisk/KSU/APatch)"
-echo -e "  ${G}2)${N} Master Setup 2 (Non-Root & OTG Setup)"
-echo -e "  ${G}3)${N} WiFi Tools     (Scan, Speed, Info, Pass)"
-echo -e "  ${G}4)${N} ADB & Fastboot (OTG Phone Root & Flash)"
-echo -e "  ${R}0)${N} Exit"
-echo ""
-read -p "Choose Main Option [0-4]: " main_ch
-case $main_ch in
-1) root_setup_menu ;;
-2) nonroot_setup ;;
-3) wifi_tools_menu ;;
-4) adb_fastboot_menu ;;
-0) echo -e "${C}Thank you for using MD Onik Suite!${N}"; exit 0 ;;
-*) echo -e "${R}[!] Invalid choice!${N}"; sleep 1 ;;
-esac
+    banner
+    echo -e "  ${G}1)${N} Master Setup 1 (Root: Magisk/KSU/APatch)"
+    echo -e "  ${G}2)${N} Master Setup 2 (Non-Root & OTG Setup)"
+    echo -e "  ${G}3)${N} WiFi Tools     (Scan, Speed, Info, Pass)"
+    echo -e "  ${G}4)${N} ADB & Fastboot (Universal Root & Flash)"
+    echo -e "  ${C}5)${N} Update Tool    (Get Latest Version)"
+    echo -e "  ${R}0)${N} Exit"
+    echo ""
+    read -p "Choose Main Option [0-5]: " main_ch
+
+    case $main_ch in
+        1) root_setup_menu ;;
+        2) nonroot_setup ;;
+        3) wifi_tools_menu ;;
+        4) adb_fastboot_menu ;;
+        5)
+            echo -e "\n${Y}[*] Updating ONIK PRO MASTER SUITE...${N}"
+            bash <(echo "Y3VybCAtZnNMIGh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9vbmlrbTYzNDMtc3ZnL29uaWsvbWFpbi9vbmlrLnNoIC1vICRQUkVGSVgvYmluL29uaWsgJiYgY2htb2QgK3ggJFBSRUZJWC9iaW4vb25payAmJiBvbmlr" | base64 -d)
+            exit 0 ;;
+        0) echo -e "${C}Thank you for using MD Onik Suite!${N}"; exit 0 ;;
+        *) echo -e "${R}[!] Invalid choice!${N}"; sleep 1 ;;
+    esac
 done
